@@ -1,0 +1,11 @@
+D:\Webhook\SharedDomain\bin\Debug\net9.0\SharedDomain.deps.json
+D:\Webhook\SharedDomain\bin\Debug\net9.0\SharedDomain.dll
+D:\Webhook\SharedDomain\bin\Debug\net9.0\SharedDomain.pdb
+D:\Webhook\SharedDomain\obj\Debug\net9.0\SharedDomain.GeneratedMSBuildEditorConfig.editorconfig
+D:\Webhook\SharedDomain\obj\Debug\net9.0\SharedDomain.AssemblyInfoInputs.cache
+D:\Webhook\SharedDomain\obj\Debug\net9.0\SharedDomain.AssemblyInfo.cs
+D:\Webhook\SharedDomain\obj\Debug\net9.0\SharedDomain.csproj.CoreCompileInputs.cache
+D:\Webhook\SharedDomain\obj\Debug\net9.0\SharedDomain.dll
+D:\Webhook\SharedDomain\obj\Debug\net9.0\refint\SharedDomain.dll
+D:\Webhook\SharedDomain\obj\Debug\net9.0\SharedDomain.pdb
+D:\Webhook\SharedDomain\obj\Debug\net9.0\ref\SharedDomain.dll
