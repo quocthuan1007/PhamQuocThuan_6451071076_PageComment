@@ -1,93 +1,138 @@
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
-using SharedDomain;
+using Confluent.Kafka;
 using CoreService.Data;
-using System.Threading.Tasks;
-using System.Net.Http;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using SharedDomain;
 using System.Text.Json;
-using System.Text;
 
 namespace CoreService.Services;
 
 public interface IActionExecutorService
 {
-    Task ExecuteActionAsync(ActionDecision decision, NormalizedEvent ev);
+    Task ExecuteActionAsync(
+        ActionDecision decision,
+        NormalizedEvent ev,
+        IntentType intent,
+        SentimentType sentiment,
+        CancellationToken cancellationToken = default);
 }
 
-public class ActionExecutorService : IActionExecutorService
+public class ActionExecutorService : IActionExecutorService, IDisposable
 {
     private readonly ILogger<ActionExecutorService> _logger;
     private readonly IServiceProvider _serviceProvider;
-    private readonly IConfiguration _configuration;
-    private static readonly HttpClient _httpClient = new HttpClient();
+    private readonly IReplyGenerationService _replyGenerationService;
+    private readonly IProducer<Null, string> _producer;
 
-    public ActionExecutorService(ILogger<ActionExecutorService> logger, IServiceProvider serviceProvider, IConfiguration configuration)
+    public ActionExecutorService(
+        ILogger<ActionExecutorService> logger,
+        IServiceProvider serviceProvider,
+        IConfiguration configuration,
+        IReplyGenerationService replyGenerationService)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
-        _configuration = configuration;
+        _replyGenerationService = replyGenerationService;
+        _producer = new ProducerBuilder<Null, string>(new ProducerConfig
+        {
+            BootstrapServers = configuration["Kafka:BootstrapServers"] ?? "localhost:9092"
+        }).Build();
     }
 
-    public async Task ExecuteActionAsync(ActionDecision decision, NormalizedEvent ev)
+    public async Task ExecuteActionAsync(
+        ActionDecision decision,
+        NormalizedEvent ev,
+        IntentType intent,
+        SentimentType sentiment,
+        CancellationToken cancellationToken = default)
     {
-        using var scope = _serviceProvider.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var accessToken = _configuration["Facebook:PageAccessToken"];
-
         switch (decision)
         {
+            case ActionDecision.AutoReply:
+            case ActionDecision.ThankUser:
+            case ActionDecision.ApologizeUser:
             case ActionDecision.HideComment:
-            case ActionDecision.SendToManualReview: // Cũng ẩn nếu nghi ngờ bot/link
-                _logger.LogInformation($"[FB API] Đang yêu cầu ẩn comment {ev.PlatformEventId} từ Facebook...");
-                
-                if (string.IsNullOrEmpty(ev.PlatformEventId))
-                {
-                    _logger.LogWarning("Không thể ẩn bình luận vì thiếu PlatformEventId (Comment ID).");
-                    break;
-                }
-
-                try
-                {
-                    var url = $"https://graph.facebook.com/v19.0/{ev.PlatformEventId}?access_token={accessToken}";
-                    var payload = new StringContent(JsonSerializer.Serialize(new { is_hidden = true }), Encoding.UTF8, "application/json");
-                    var response = await _httpClient.PostAsync(url, payload);
-                    
-                    var responseString = await response.Content.ReadAsStringAsync();
-                    if (response.IsSuccessStatusCode)
-                    {
-                        _logger.LogInformation($"[FB API] Đã ẩn thành công bình luận trên Facebook! Phản hồi: {responseString}");
-                    }
-                    else
-                    {
-                        _logger.LogError($"[FB API LỖI] Không thể ẩn bình luận. Mã lỗi: {response.StatusCode}, Phản hồi: {responseString}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"[FB API NGOẠI LỆ] {ex.Message}");
-                }
-
-                if (decision == ActionDecision.SendToManualReview)
-                {
-                     _logger.LogInformation($"[Internal] Đã đưa comment {ev.EventId} vào hàng chờ xét duyệt thủ công.");
-                }
+            case ActionDecision.SendToManualReview:
+                await PublishFacebookCommandAsync(decision, ev, intent, sentiment, cancellationToken);
                 break;
 
             case ActionDecision.AddToBlacklist:
             case ActionDecision.BlockUser:
-                _logger.LogInformation($"[Internal] Thêm user {ev.SenderId} vào Blacklist cục bộ");
-                if (!dbContext.UserBlacklists.Any(u => u.SenderId == ev.SenderId))
-                {
-                    dbContext.UserBlacklists.Add(new UserBlacklist { SenderId = ev.SenderId, Reason = "Spam liên tục" });
-                    await dbContext.SaveChangesAsync();
-                }
+                await AddToInternalBlacklistAsync(ev.SenderId, cancellationToken);
                 break;
 
             case ActionDecision.None:
             default:
-                _logger.LogInformation($"[Auto Reply] Bỏ qua, không làm gì với comment {ev.EventId}");
+                _logger.LogInformation("[Automation] No Facebook command for event {EventId}.", ev.EventId);
                 break;
         }
+    }
+
+    private async Task PublishFacebookCommandAsync(
+        ActionDecision decision,
+        NormalizedEvent ev,
+        IntentType intent,
+        SentimentType sentiment,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(ev.PlatformEventId))
+        {
+            _logger.LogWarning("Cannot publish Facebook command because PlatformEventId is missing for event {EventId}.", ev.EventId);
+            return;
+        }
+
+        var replyMessage = string.Empty;
+        if (decision is ActionDecision.AutoReply or ActionDecision.ThankUser or ActionDecision.ApologizeUser)
+        {
+            replyMessage = await _replyGenerationService.GenerateReplyAsync(ev, decision, intent, sentiment, cancellationToken);
+        }
+
+        var command = new FacebookCommandMessage
+        {
+            CommandId = $"{decision}:{ev.PlatformEventId}:{ev.EventId}",
+            EventId = ev.EventId,
+            PlatformEventId = ev.PlatformEventId,
+            SenderId = ev.SenderId,
+            Decision = decision,
+            ReplyMessage = replyMessage
+        };
+
+        await _producer.ProduceAsync(
+            Constants.KafkaTopicReplyCommands,
+            new Message<Null, string> { Value = JsonSerializer.Serialize(command) },
+            cancellationToken);
+
+        _logger.LogInformation(
+            "[Kafka] Published command {CommandId} to {Topic} with decision {Decision}",
+            command.CommandId,
+            Constants.KafkaTopicReplyCommands,
+            decision);
+    }
+
+    private async Task AddToInternalBlacklistAsync(string senderId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(senderId))
+        {
+            return;
+        }
+
+        using var scope = _serviceProvider.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        if (await dbContext.UserBlacklists.AnyAsync(u => u.SenderId == senderId, cancellationToken))
+        {
+            return;
+        }
+
+        dbContext.UserBlacklists.Add(new UserBlacklist { SenderId = senderId, Reason = "Repeated spam" });
+        await dbContext.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("[Internal] Added user {SenderId} to blacklist.", senderId);
+    }
+
+    public void Dispose()
+    {
+        _producer.Flush(TimeSpan.FromSeconds(5));
+        _producer.Dispose();
     }
 }

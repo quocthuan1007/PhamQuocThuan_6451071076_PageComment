@@ -179,7 +179,6 @@ D:\Webhook\CoreService\bin\Debug\net9.0\runtimes\win-arm\native\e_sqlite3.dll
 D:\Webhook\CoreService\bin\Debug\net9.0\runtimes\win-arm64\native\e_sqlite3.dll
 D:\Webhook\CoreService\bin\Debug\net9.0\runtimes\win-x64\native\e_sqlite3.dll
 D:\Webhook\CoreService\bin\Debug\net9.0\runtimes\win-x86\native\e_sqlite3.dll
-D:\Webhook\CoreService\bin\Debug\net9.0\runtimes\win\lib\net9.0\System.Diagnostics.EventLog.Messages.dll
 D:\Webhook\CoreService\bin\Debug\net9.0\runtimes\win\lib\net9.0\System.Diagnostics.EventLog.dll
 D:\Webhook\CoreService\bin\Debug\net9.0\SharedDomain.dll
 D:\Webhook\CoreService\bin\Debug\net9.0\SharedDomain.pdb
@@ -189,3 +188,15 @@ D:\Webhook\CoreService\obj\Debug\net9.0\refint\CoreService.dll
 D:\Webhook\CoreService\obj\Debug\net9.0\CoreService.pdb
 D:\Webhook\CoreService\obj\Debug\net9.0\CoreService.genruntimeconfig.cache
 D:\Webhook\CoreService\obj\Debug\net9.0\ref\CoreService.dll
+D:\Webhook\CoreService\obj\Debug\net9.0\CoreService.sourcelink.json
+D:\Webhook\CoreService\obj\Debug\net9.0\rpswa.dswa.cache.json
+D:\Webhook\CoreService\obj\Debug\net9.0\CoreService.MvcApplicationPartsAssemblyInfo.cache
+D:\Webhook\CoreService\obj\Debug\net9.0\rjimswa.dswa.cache.json
+D:\Webhook\CoreService\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
+D:\Webhook\CoreService\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
+D:\Webhook\CoreService\obj\Debug\net9.0\scopedcss\bundle\CoreService.styles.css
+D:\Webhook\CoreService\obj\Debug\net9.0\staticwebassets.build.json
+D:\Webhook\CoreService\obj\Debug\net9.0\staticwebassets.build.json.cache
+D:\Webhook\CoreService\obj\Debug\net9.0\staticwebassets.development.json
+D:\Webhook\CoreService\obj\Debug\net9.0\staticwebassets.build.endpoints.json
+D:\Webhook\CoreService\bin\Debug\net9.0\CoreService.staticwebassets.endpoints.json

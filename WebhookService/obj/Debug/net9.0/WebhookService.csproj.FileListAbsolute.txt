@@ -58,3 +58,7 @@ D:\Webhook\WebhookService\obj\Debug\net9.0\refint\WebhookService.dll
 D:\Webhook\WebhookService\obj\Debug\net9.0\WebhookService.pdb
 D:\Webhook\WebhookService\obj\Debug\net9.0\WebhookService.genruntimeconfig.cache
 D:\Webhook\WebhookService\obj\Debug\net9.0\ref\WebhookService.dll
+D:\Webhook\WebhookService\obj\Debug\net9.0\WebhookService.sourcelink.json
+D:\Webhook\WebhookService\bin\Debug\net9.0\Microsoft.Extensions.Configuration.dll
+D:\Webhook\WebhookService\bin\Debug\net9.0\Microsoft.Extensions.Configuration.Abstractions.dll
+D:\Webhook\WebhookService\bin\Debug\net9.0\Microsoft.Extensions.Primitives.dll

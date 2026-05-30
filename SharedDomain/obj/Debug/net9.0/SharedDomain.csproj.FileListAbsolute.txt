@@ -9,3 +9,5 @@ D:\Webhook\SharedDomain\obj\Debug\net9.0\SharedDomain.dll
 D:\Webhook\SharedDomain\obj\Debug\net9.0\refint\SharedDomain.dll
 D:\Webhook\SharedDomain\obj\Debug\net9.0\SharedDomain.pdb
 D:\Webhook\SharedDomain\obj\Debug\net9.0\ref\SharedDomain.dll
+D:\Webhook\SharedDomain\obj\Debug\net9.0\SharedDomain.sourcelink.json
+D:\Webhook\SharedDomain\obj\Debug\net9.0\SharedDomain.csproj.AssemblyReference.cache

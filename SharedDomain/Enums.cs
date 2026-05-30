@@ -31,6 +31,9 @@ public enum EventStatus
 public enum ActionDecision
 {
     None,
+    AutoReply,
+    ThankUser,
+    ApologizeUser,
     HideComment,
     AddToBlacklist,
     SendToManualReview,

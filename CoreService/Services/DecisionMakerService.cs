@@ -1,5 +1,4 @@
 using SharedDomain;
-using System.Threading.Tasks;
 
 namespace CoreService.Services;
 
@@ -16,21 +15,32 @@ public class DecisionMakerService : IDecisionMakerService
         {
             if (spamCount >= 3)
             {
-                return ActionDecision.BlockUser; // Hoặc AddToBlacklist
+                return ActionDecision.BlockUser;
             }
-            if (ev.Content.Contains("http")) // Link độc hại / bot
+
+            if (ev.Content.Contains("http", StringComparison.OrdinalIgnoreCase))
             {
-                return ActionDecision.SendToManualReview; // Ẩn và đẩy sang hàng chờ
+                return ActionDecision.SendToManualReview;
             }
-            return ActionDecision.HideComment; // Spam nhẹ
+
+            return ActionDecision.HideComment;
         }
 
-        // Logical conditions for normal comments based on AI
-        if (intent == IntentType.Complaint && sentiment == SentimentType.Negative)
+        if (sentiment == SentimentType.Negative || intent == IntentType.Complaint)
         {
-            return ActionDecision.SendToManualReview; // Cần hỗ trợ ngay
+            return ActionDecision.ApologizeUser;
         }
 
-        return ActionDecision.None; // Bình thường, có thể reply tự động
+        if (intent == IntentType.PriceInquiry)
+        {
+            return ActionDecision.AutoReply;
+        }
+
+        if (sentiment == SentimentType.Positive || intent == IntentType.Compliment)
+        {
+            return ActionDecision.ThankUser;
+        }
+
+        return ActionDecision.AutoReply;
     }
 }
